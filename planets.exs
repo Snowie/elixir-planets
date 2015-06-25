@@ -20,6 +20,22 @@ defmodule Vector do
 		
 		%Vector{magnitude: magnitude, theta: theta}
 	end
+
+	def sum_list(list) do
+		sum_list(list, 0)
+	end
+
+	def sum_list([head|tail], sum) do
+		sum_list(tail, Vector.add(head, sum))
+	end
+
+	def sum_list([], sum) do
+		sum
+	end
+
+	#From: http://media.pragprog.com/titles/elixir/code/lists/mylist1.exs
+  	def map([], _func),             do: []
+  	def map([ head | tail ], func), do: [ func.(head) | map(tail, func) ]
 end
 
 defmodule Point do
@@ -45,35 +61,39 @@ defmodule Object do
 	defstruct name: "", mass: 0.0, position: %Point{}, velocity: %Vector{}, force: %Vector{}
 
 	def forceGravity(o1, o2) do
-		G = :math.pow(6.6741, -11)
+		g = :math.pow(6.6741, -11)
 		distance = Point.distance(o1.position, o2.position)
 		
 		#Fg = G * M1 * M2 / r^2
-		magnitude  = G * o1.mass * o2.mass / :math.pow(distance, 2)
+		magnitude  = g * o1.mass * o2.mass / :math.pow(distance, 2)
 		theta = :math.atan2(o2.position.y - o1.position.y, o2.position.x - o2.position.x)
 		
-		%Vector{magnitude: magnitude, theta: theta}
+		if o1.name !== o2.name do
+			%Vector{magnitude: magnitude, theta: theta}
+		else
+			%Vector{}
+		end
 	end
 
-	def updateForce(obj, setOfObjects) do
-		currForce = %{}
-		for other = %Object{name: name} <- setOfObjects, name != obj.name, do: currForce = Vector.add(currForce, forceGravity(obj, other))
+	def updateForce(obj, listOfObjects) do
+		currForces = Vector.map(listOfObjects, fn(n) -> forceGravity(obj, n) end)
 
-		%Object{obj| force: currForce}
+		currForce = Vector.sum(currForces)
+
+		%Object{obj | force: currForce}
 	end
 
 	def move(obj, dt) do
+		#Calculate new velocity vector
 		aX = Vector.getXComponent(obj.force) / obj.mass
 		aY = Vector.getYComponent(obj.force) / obj.mass
-
 		vX = Vector.getXComponent(obj.velocity) + aX * dt
 		vY = Vector.getYComponent(obj.velocity) + aY * dt
-
 		theta = :math.atan2(vY, vX)
 		magnitude = :math.sqrt(vX * vX + vY * vY)
-
 		velocity = %Vector{magnitude: magnitude, theta: theta}
 
+		#Translate and update
 		%Object{obj | position: Point.translate(obj.position, velocity)}
 	end
 end
