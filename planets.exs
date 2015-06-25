@@ -41,6 +41,39 @@ defmodule Point do
 	end
 end
 
-defmodule Planet do
+defmodule Object do
 	defstruct name: "", mass: 0.0, position: %Point{}, velocity: %Vector{}, force: %Vector{}
+
+	def forceGravity(o1, o2) do
+		G = :math.pow(6.6741, -11)
+		distance = Point.distance(o1.position, o2.position)
+		
+		#Fg = G * M1 * M2 / r^2
+		magnitude  = G * o1.mass * o2.mass / :math.pow(distance, 2)
+		theta = :math.atan2(o2.position.y - o1.position.y, o2.position.x - o2.position.x)
+		
+		%Vector{magnitude: magnitude, theta: theta}
+	end
+
+	def updateForce(obj, setOfObjects) do
+		currForce = %{}
+		for other = %Object{name: name} <- setOfObjects, name != obj.name, do: currForce = Vector.add(currForce, forceGravity(obj, other))
+
+		%Object{obj| force: currForce}
+	end
+
+	def move(obj, dt) do
+		aX = Vector.getXComponent(obj.force) / obj.mass
+		aY = Vector.getYComponent(obj.force) / obj.mass
+
+		vX = Vector.getXComponent(obj.velocity) + aX * dt
+		vY = Vector.getYComponent(obj.velocity) + aY * dt
+
+		theta = :math.atan2(vY, vX)
+		magnitude = :math.sqrt(vX * vX + vY * vY)
+
+		velocity = %Vector{magnitude: magnitude, theta: theta}
+
+		%Object{obj | position: Point.translate(obj.position, velocity)}
+	end
 end
