@@ -38,6 +38,7 @@ defmodule Vector do
   	def map([ head | tail ], func), do: [ func.(head) | map(tail, func) ]
 end
 
+#Basic 2D cartesian points
 defmodule Point do
 	defstruct x: 0.0, y: 0.0
 	
@@ -57,10 +58,12 @@ defmodule Point do
 	end
 end
 
+#A struct to represent various celestial bodies
 defmodule Object do
 	defstruct name: "", mass: 0.0, position: %Point{}, velocity: %Vector{}, force: %Vector{}
 
 	def forceGravity(o1, o2) do
+		#Gravitational constant
 		g = :math.pow(6.6741, -11)
 		distance = Point.distance(o1.position, o2.position)
 		
@@ -68,6 +71,7 @@ defmodule Object do
 		magnitude  = g * o1.mass * o2.mass / :math.pow(distance, 2)
 		theta = :math.atan2(o2.position.y - o1.position.y, o2.position.x - o2.position.x)
 		
+		#Don't apply gravity to yourself in point objects, it gets messy.
 		if o1.name !== o2.name do
 			%Vector{magnitude: magnitude, theta: theta}
 		else
@@ -75,6 +79,7 @@ defmodule Object do
 		end
 	end
 
+	#Update the current force acting on the body
 	def updateForce(obj, listOfObjects) do
 		currForces = Vector.map(listOfObjects, fn(n) -> forceGravity(obj, n) end)
 
@@ -83,6 +88,7 @@ defmodule Object do
 		%Object{obj | force: currForce}
 	end
 
+	#Translate according to current velocity and new forces
 	def move(obj, dt) do
 		#Calculate new velocity vector
 		aX = Vector.getXComponent(obj.force) / obj.mass
